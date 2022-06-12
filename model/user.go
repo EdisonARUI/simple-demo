@@ -5,7 +5,7 @@ import "time"
 type ModeTime time.Time
 
 type User struct {
-	UserID    uint   `gorm:"primaryKey;column:id;"`
+	UserID    uint   `gorm:"primaryKey;column:userid;"`
 	UserName  string `gorm:"column:username;unique;not null"`
 	Password  string `gorm:"column:password;not null"`
 	Videos    []*Video
