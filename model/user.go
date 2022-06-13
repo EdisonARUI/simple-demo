@@ -8,6 +8,7 @@ type User struct {
 	UserID    uint   `gorm:"primaryKey;column:userid;"`
 	UserName  string `gorm:"column:username;unique;not null"`
 	Password  string `gorm:"column:password;not null"`
+	Token     string `gorm:"column:token;not null"`
 	Videos    []*Video
 	Comments  []*Comment
 	Likes     []*Video  `gorm:"many2many:like;joinForeignKey:user_id;joinReferences:video_id;"`

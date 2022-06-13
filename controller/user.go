@@ -3,6 +3,7 @@ package controller
 import (
 	"context"
 	"github.com/gin-gonic/gin"
+	"log"
 	"net/http"
 	"simple-demo/helper"
 	"simple-demo/model"
@@ -33,12 +34,7 @@ type UserLoginResponse struct {
 
 type UserResponse struct {
 	Response
-	UserId        uint   `json:"user_id,omitempty"`
-	Token         string `json:"token"`
-	Username      string `json:"username"`
-	FollowCount   int64  `json:"follow_count"`
-	FollowerCount int64  `json:"follower_count"`
-	IsFollow      bool   `json:"is_follow"`
+	UserInfo User
 }
 
 type UserRegisterService struct {
@@ -103,19 +99,27 @@ func UserInfo(c *gin.Context) {
 	FID, _ := strconv.ParseUint(fanid, 10, 32)
 
 	fanInfo := model.User{UserID: uint(FID)}
-	userInfo, err := service.GetUserByID(uint(UID))
+	userInfo, _ := service.GetUserByID(uint(UID))
 	followercount, _ := service.GetFanCount(uint(UID))
 	followcount, _ := service.GetFollowCount(uint(UID))
 	isfollow, _ := service.IsFollow(fanInfo.UserID, userInfo.UserID)
-	if err == nil && UID != 0 {
-		c.JSON(http.StatusOK, UserResponse{
-			Response:      Response{StatusCode: 0},
-			UserId:        uint(UID),
-			Token:         token,
-			Username:      userInfo.UserName,
+	log.Println(followercount)
+	log.Println(followcount)
+	log.Println(isfollow)
+	var usersLoginInfo = map[string]User{
+		token: {
+			Id:            int64(UID),
+			Name:          userInfo.UserName,
 			FollowCount:   followcount,
 			FollowerCount: followercount,
 			IsFollow:      isfollow,
+		},
+	}
+	if user, exist := usersLoginInfo[token]; exist {
+		c.JSON(http.StatusOK, UserResponse{
+			Response: Response{StatusCode: 0},
+			UserInfo: user,
+
 		})
 	} else {
 		c.JSON(http.StatusOK, UserResponse{
