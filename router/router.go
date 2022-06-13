@@ -1,8 +1,8 @@
 package router
 
 import (
-	"simple-demo/controller"
 	"github.com/gin-gonic/gin"
+	"simple-demo/controller"
 )
 
 func InitRouter(r *gin.Engine) {

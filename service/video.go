@@ -12,13 +12,23 @@ func CreateVideo(ctx context.Context, video *model.Video) error {
 }
 
 // GetVideoByUserID 根据用户id查视频
-func GetVideoByUserID(ctx context.Context, userID int64) ([]*model.Video, error) {
-	user := model.User{UserID: uint(userID)}
-	if err := model.DB.WithContext(ctx).Preload("Videos").Find(&user).Error; err != nil {
+func GetVideoByUserID(userID uint) ([]model.Video, error) {
+	user := model.User{UserID: userID}
+	if err := model.DB.Preload("Videos").Find(&user).Error; err != nil {
 		return nil, err
 	}
-	return user.Videos, nil
+	return []model.Video{}, nil
 }
+
+//// GetVideoListByUserID 根据用户id查视频
+//func GetVideoListByUserID(userID uint) ([]controller.Video, error) {
+//	userid := model.User{UserID: userID}
+//	var videoList []controller.Video
+//	if err := model.DB.Where("userid = ?", userid).Find(&videoList).Error; err != nil {
+//		return nil, err
+//	}
+//	return videoList, nil
+//}
 
 // GetLikeCount 返回视频点赞数
 func GetLikeCount(ctx context.Context, videoID int64) (int64, error) {

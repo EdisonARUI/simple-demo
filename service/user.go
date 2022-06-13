@@ -15,12 +15,14 @@ func CreateUser(userInfo *model.User) (int64, error) {
 }
 
 // UserLogin 根据用户输入信息确认user,并返回用户ID
-func UserLogin(userInfo model.User) (int64, error) {
-	err := model.DB.Where("username = ? AND password = ? ", userInfo.UserName, userInfo.Password).Find(&userInfo).Error
-	if err != nil {
-		return 0, err
+func UserLogin(userInfo model.User) (int64, int64) {
+	find := model.DB.Where("username = ? AND password = ? ", userInfo.UserName, userInfo.Password).Find(&userInfo)
+	if find.RowsAffected == 0 {
+		return 0, find.RowsAffected
+	} else {
+		return int64(userInfo.UserID), find.RowsAffected
 	}
-	return int64(userInfo.UserID), nil
+
 }
 
 //GetUserByID 需要通过用户ID查询用户信息

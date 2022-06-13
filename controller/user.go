@@ -29,12 +29,12 @@ type UserLoginResponse struct {
 	UserId   int64  `json:"user_id,omitempty"`
 	Token    string `json:"token"`
 	Username string `json:"username"`
-	Ero      error  `json:"error"`
 }
 
 type UserResponse struct {
 	Response
-	UserInfo User
+	User User `json:"user"`
+
 }
 
 type UserRegisterService struct {
@@ -55,6 +55,7 @@ func Register(c *gin.Context) {
 			Response: Response{StatusCode: 1, StatusMsg: "User already exist"},
 		})
 	} else {
+		userInfo := model.User{UserName: username, Password: password, Token: token}
 		userid, _ := service.CreateUser(&userInfo)
 
 		c.JSON(http.StatusOK, UserLoginResponse{
@@ -71,17 +72,16 @@ func Login(c *gin.Context) {
 	password := helper.GetMd5(c.Query("password"))
 
 	userInfo := model.User{UserName: username, Password: password}
-	userid, err := service.UserLogin(userInfo)
+	userid, RowsAffected := service.UserLogin(userInfo)
 
 	token, _ := helper.GenerateToken(userInfo.UserName, userInfo.Password)
 
-	if err == nil {
+	if RowsAffected != 0 {
 		c.JSON(http.StatusOK, UserLoginResponse{
 			Response: Response{StatusCode: 0, StatusMsg: "User exist"},
 			UserId:   userid,
 			Token:    token,
 			Username: username,
-			Ero:      err,
 		})
 	} else {
 		c.JSON(http.StatusOK, UserLoginResponse{
@@ -118,7 +118,7 @@ func UserInfo(c *gin.Context) {
 	if user, exist := usersLoginInfo[token]; exist {
 		c.JSON(http.StatusOK, UserResponse{
 			Response: Response{StatusCode: 0},
-			UserInfo: user,
+			User:     user,
 
 		})
 	} else {

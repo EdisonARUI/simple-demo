@@ -50,10 +50,14 @@ func Publish(c *gin.Context) {
 
 // PublishList all users have same publish video list
 func PublishList(c *gin.Context) {
-	c.JSON(http.StatusOK, VideoListResponse{
-		Response: Response{
-			StatusCode: 0,
-		},
-		VideoList: DemoVideos,
-	})
+	//userid := c.Query("user_id")
+	////token := c.Query("token")
+	//UID, _ := strconv.ParseUint(userid, 10, 32)
+	//var videoList []Video
+	//model.DB.Where("user_id = ?", UID).Find(&videoList)
+	//
+	//c.JSON(http.StatusOK, VideoListResponse{
+	//	Response:  Response{StatusCode: 0},
+	//	VideoList: videoList,
+	//})
 }
