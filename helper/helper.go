@@ -3,14 +3,17 @@ package helper
 import (
 	"crypto/md5"
 	"fmt"
-	"github.com/dgrijalva/jwt-go"
+	jwtgo "github.com/dgrijalva/jwt-go"
+	"time"
 )
 
 type UserClaims struct {
-	username string `json:"username"`
-	password string `json:"password"`
-	jwt.StandardClaims
+	UserName     string `json:"userName"`
+	UserPassword string `json:"userPassword"`
+	jwtgo.StandardClaims
 }
+
+var jwtkey = []byte("JjUhqZteNUhtDQfvXH9uCHhdKDmUDyAm")
 
 // GetMd5
 // 生成 md5
@@ -18,18 +21,23 @@ func GetMd5(s string) string {
 	return fmt.Sprintf("%x", md5.Sum([]byte(s)))
 }
 
-var myKey = []byte("demo-key")
-
 // GenerateToken
 // 生成 token
-func GenerateToken(username, password string) (string, error) {
+func GenerateToken(username string, userpassword string) (string, error) {
+	expireTime := time.Now().Add(1 * time.Hour) //过期时间
+	nowTime := time.Now()                       //当前时间
 	UserClaim := &UserClaims{
-		username:       username,
-		password:       password,
-		StandardClaims: jwt.StandardClaims{},
+		UserName:     username,
+		UserPassword: userpassword,
+		StandardClaims: jwtgo.StandardClaims{
+			ExpiresAt: expireTime.Unix(), //过期时间戳
+			IssuedAt:  nowTime.Unix(),    //当前时间戳
+			Issuer:    "Douyin",          //颁发者签名
+			Subject:   "userToken",       //签名主题
+		},
 	}
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, UserClaim)
-	tokenString, err := token.SignedString(myKey)
+	tokenStruct := jwtgo.NewWithClaims(jwtgo.SigningMethodHS256, UserClaim)
+	tokenString, err := tokenStruct.SignedString(jwtkey)
 	if err != nil {
 		return "", err
 	}
