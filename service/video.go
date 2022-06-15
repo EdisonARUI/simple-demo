@@ -30,6 +30,26 @@ func GetVideoByUserID(userID uint) ([]model.Video, error) {
 //	return videoList, nil
 //}
 
+// GetVideoByLoginToken 根据用户token提供视频
+func GetVideoByLoginToken(token string) ([]model.Video, error) {
+	userinfo, _ := GetUserIDByToken(token)
+	userid := userinfo.UserID
+	var videoList []model.Video
+	if err := model.DB.Raw("SELECT * FROM video WHERE user_id <> ? ORDER BY RAND() LIMIT ? ", userid, 5).Scan(&videoList).Error; err != nil {
+		return nil, err
+	}
+	return videoList, nil
+}
+
+// GetVideoByNoLoginToken 给非登录用户提供视频
+func GetVideoByNoLoginToken() ([]model.Video, error) {
+	var videoList []model.Video
+	if err := model.DB.Raw("SELECT * FROM video ORDER BY RAND() LIMIT ? ", 5).Scan(&videoList).Error; err != nil {
+		return nil, err
+	}
+	return videoList, nil
+}
+
 // GetLikeCount 返回视频点赞数
 func GetLikeCount(ctx context.Context, videoID int64) (int64, error) {
 	video := model.Video{VideoID: uint(videoID)}
