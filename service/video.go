@@ -3,23 +3,14 @@ package service
 import (
 	"context"
 	"math"
-	"simple-demo/model"
 	"simple-demo/helper"
+	"simple-demo/model"
 )
 
 // CreateVideo 创建视频信息
 func CreateVideo(ctx context.Context, video *model.Video) error {
 	return model.DB.WithContext(ctx).Create(&video).Error
 }
-
-// GetVideoByUserID 根据用户id查视频
-// func GetVideoByUserID(userID uint) ([]model.Video, error) {
-// 	user := model.User{UserID: userID}
-// 	if err := model.DB.Preload("Videos").Find(&user).Error; err != nil {
-// 		return nil, err
-// 	}
-// 	return []model.Video{}, nil
-// }
 
 // GetVideoListByUserID 根据用户id查视频
 func GetVideoListByUserID(userID uint) ([]model.Video, error) {
@@ -49,48 +40,28 @@ func GetVideoByNoLoginToken() ([]model.Video, error) {
 	return videoList, nil
 }
 
-// GetVideoByLoginToken 根据用户token提供视频
-func GetVideoByLoginToken(token string) ([]model.Video, error) {
-	userinfo, _ := GetUserIDByToken(token)
-	userid := userinfo.UserID
-	var videoList []model.Video
-	if err := model.DB.Raw("SELECT * FROM video WHERE user_id <> ? ORDER BY RAND() LIMIT ? ", userid, 5).Scan(&videoList).Error; err != nil {
-		return nil, err
-	}
-	return videoList, nil
-}
-
-// GetVideoByNoLoginToken 给非登录用户提供视频
-func GetVideoByNoLoginToken() ([]model.Video, error) {
-	var videoList []model.Video
-	if err := model.DB.Raw("SELECT * FROM video ORDER BY RAND() LIMIT ? ", 5).Scan(&videoList).Error; err != nil {
-		return nil, err
-	}
-	return videoList, nil
-}
-
 // GetLikeCount 返回视频点赞数
-func GetLikeCount(ctx context.Context, videoID int64) (int64, error) {
+func GetLikeCount(videoID int64) (int64, error) {
 	video := model.Video{VideoID: uint(videoID)}
-	return model.DB.WithContext(ctx).Model(&video).Association("Likes").Count(), nil
+	return model.DB.Model(&video).Association("Likes").Count(), nil
 }
 
 // GetCommentCount 返回视频评论数
-func GetCommentCount(ctx context.Context, videoID int64) (int64, error) {
+func GetCommentCount(videoID int64) (int64, error) {
 	video := model.Video{VideoID: uint(videoID)}
-	return model.DB.WithContext(ctx).Model(&video).Association("Comments").Count(), nil
+	return model.DB.Model(&video).Association("Comments").Count(), nil
 }
 
 // IsFavorite 返回是否点赞
-func IsFavorite(ctx context.Context, videoID int64, userID int64) (bool, error) {
+func IsFavorite(videoID int64, userID int64) (bool, error) {
 	user := model.User{UserID: uint(userID)}
-	return model.DB.WithContext(ctx).Model(&user).Where("`like`.video_id = ?", videoID).Association("Likes").Count() > 0, nil
+	return model.DB.Model(&user).Where("`like`.video_id = ?", videoID).Association("Likes").Count() > 0, nil
 }
 
 // GetVideoByTime 根据时间戳返回最近count个视频,还需要返回next time
-func GetVideoByTime(ctx context.Context, latestTime int64, count int64) ([]*model.Video, int64, error) {
+func GetVideoByTime(latestTime int64, count int64) ([]*model.Video, int64, error) {
 	var videos []*model.Video
-	if err := model.DB.WithContext(ctx).Where("created_at < ?", latestTime).Limit(int(count)).Order("created_at DESC").Find(&videos).Error; err != nil {
+	if err := model.DB.Where("created_at < ?", latestTime).Limit(int(count)).Order("created_at DESC").Find(&videos).Error; err != nil {
 		return nil, 0, err
 	}
 	var nextTime int64 = math.MaxInt32
@@ -101,49 +72,61 @@ func GetVideoByTime(ctx context.Context, latestTime int64, count int64) ([]*mode
 }
 
 // LikeVideo 点赞视频
-func LikeVideo(ctx context.Context, userID int64, videoID int64) error {
+func LikeVideo(userID int64, videoID int64) error {
+
 	user := model.User{UserID: uint(userID)}
 	video := model.Video{VideoID: uint(videoID)}
-	return model.DB.WithContext(ctx).Model(&user).Association("Likes").Append(&video)
+	err := model.DB.Model(&user).Association("Likes").Append(&video)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 // UnLikeVideo 取消点赞视频
-func UnLikeVideo(ctx context.Context, userID int64, videoID int64) error {
+func UnLikeVideo(userID int64, videoID int64) error {
 	user := model.User{UserID: uint(userID)}
 	video := model.Video{VideoID: uint(videoID)}
-	return model.DB.WithContext(ctx).Model(&user).Association("Likes").Delete(&video)
+	err := model.DB.Model(&user).Association("Likes").Delete(&video)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
-func GetLikeVideo(ctx context.Context, userID int64) ([]*model.Video, error) {
-	user := model.User{UserID: uint(userID)}
-	if err := model.DB.WithContext(ctx).Preload("Likes").Find(&user).Error; err != nil {
-		return nil, err
-	}
-	return user.Likes, nil
+func GetLikeVideo(userID int64) ([]model.Video, error) {
+	var videoList []model.Video
+
+	model.DB.Table("like").Select("like.video_id,video.user_id,video.title,video.play_url,video.cover_url").
+		Where("like.user_id=?", userID).
+		Joins("LEFT JOIN video ON like.video_id = video.video_id").
+		Find(&videoList)
+
+	return videoList, nil
 }
 
 // CreateComment 新增评论,需要dal层返回评论详情
-func CreateComment(ctx context.Context, userID int64, videoID int64, content string) (*model.Comment, error) {
+func CreateComment(userID int64, videoID int64, content string) (*model.Comment, error) {
 	comment := model.Comment{
 		UserID:  uint(userID),
 		VideoID: uint(videoID),
 		Content: content,
 	}
-	if err := model.DB.WithContext(ctx).Create(&comment).Error; err != nil {
+	if err := model.DB.Create(&comment).Error; err != nil {
 		return nil, err
 	}
 	return &comment, nil
 }
 
 // DeleteComment 删除评论
-func DeleteComment(ctx context.Context, commentID int64) error {
-	return model.DB.WithContext(ctx).Delete(&model.Comment{}, commentID).Error
+func DeleteComment(commentID int64) error {
+	return model.DB.Delete(&model.Comment{}, commentID).Error
 }
 
 // GetComment 查询评论,需要dal层返回评论详情,有可能有多条评论
-func GetComment(ctx context.Context, videoID int64) ([]*model.Comment, error) {
+func GetComment(videoID int64) ([]*model.Comment, error) {
 	video := model.Video{VideoID: uint(videoID)}
-	if err := model.DB.WithContext(ctx).Preload("Comments").Find(&video).Error; err != nil {
+	if err := model.DB.Preload("Comments").Find(&video).Error; err != nil {
 		return nil, err
 	}
 	return video.Comments, nil
