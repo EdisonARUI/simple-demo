@@ -1,7 +1,6 @@
 package controller
 
 import (
-	"context"
 	"log"
 	"net/http"
 	"simple-demo/helper"
@@ -37,16 +36,16 @@ type UserResponse struct {
 
 }
 
-type UserRegisterService struct {
-	ctx context.Context
-}
+// type UserRegisterService struct {
+// 	ctx context.Context
+// }
 
 func Register(c *gin.Context) {
 	username := c.Query("username")
 	password := helper.GetMd5(c.Query("password"))
  
 	userInfo := model.User{UserName: username, Password: password} 
-	token, _ := helper.GenerateToken(userInfo.UserName, userInfo.Password)
+	token, _ := helper.GenerateToken(userInfo.UserName, int(userInfo.UserID))
  
 	_, err := service.GetUserByName(userInfo.UserName)
 	if err == nil {
@@ -74,8 +73,7 @@ func Login(c *gin.Context) {
 
 	userid, RowsAffected := service.UserLogin(userInfo)
 
-	password = helper.GetMd5(password)
-	token, _ := helper.GenerateToken(userInfo.UserName, userInfo.Password)
+	token, _ := helper.GenerateToken(userInfo.UserName, int(userid))
 
 	if RowsAffected != 0 {
 		c.JSON(http.StatusOK, UserLoginResponse{

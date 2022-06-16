@@ -6,7 +6,7 @@ type Video struct {
 	Title     string `gorm:"column:title"`
 	PlayUrl   string `gorm:"column:play_url"`
 	CoverUrl  string `gorm:"column:cover_url"`
-	CreatedAt int
+	CreatedAt int64
 	Comments  []*Comment
 	Likes     []*User `gorm:"many2many:like;joinForeignKey:video_id;joinReferences:user_id;"`
 }

@@ -25,19 +25,20 @@ func UserLogin(userInfo model.User) (int64, int64) {
 
 }
 
-// GetUserIDByToken 根据用户id查token
-func GetUserIDByToken(token string) (*model.User, error) {
-	var user model.User
-	if err := model.DB.Where("token = ?", token).First(&user).Error; err != nil {
-		return &user, err
-	}
-	return &user, nil
-}
+// GetUserByToken 根据用户token查user
+// func GetUserByToken(token string) (*model.User, error) {
+// 	var user model.User
+// 	if err := model.DB.Where("token = ?", token).First(&user).Error; err != nil {
+// 		return &user, err
+// 	}
+// 	return &user, nil
+// }
+
 
 //GetUserByID 需要通过用户ID查询用户信息
 func GetUserByID(userID uint) (*model.User, error) {
-	user := model.User{UserID: userID}
-	if err := model.DB.First(&user).Error; err != nil {
+	var user model.User
+	if err := model.DB.Where("userid = ?", userID).First(&user).Error; err != nil {
 		return &user, err
 	}
 	return &user, nil

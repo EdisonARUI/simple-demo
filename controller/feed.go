@@ -19,8 +19,9 @@ type FeedResponse struct {
 func Feed(c *gin.Context) {
 	token := c.Query("token")
 	if token == "" {
-		videoList, _ := service.GetVideoByNoLoginToken()
-		videoList_, err := GenerateVideo(videoList)
+		videoList_, _ := service.GetVideoByNoLoginToken()
+		videoList, err := GenerateVideo(videoList_)
+
 		if err != nil {
 			c.JSON(http.StatusOK, Response{
 				StatusCode: 1, StatusMsg: "error occur in feeding",
@@ -28,13 +29,13 @@ func Feed(c *gin.Context) {
 		} else {
 			c.JSON(http.StatusOK, FeedResponse{
 				Response:       Response{StatusCode: 0},
-				VideoList: 		videoList_,
+				VideoList: 		videoList,
 				NextTime:       time.Now().Unix(),
 			})
 		}
 	} else {
-		videoList, _ := service.GetVideoByLoginToken(token)
-		videoList_, err := GenerateVideo(videoList)
+		videoList_, _ := service.GetVideoByLoginToken(token)
+		videoList, err := GenerateVideo(videoList_)
 		if err != nil {
 			c.JSON(http.StatusOK, Response{
 				StatusCode: 1, StatusMsg: "error occur in feeding",
@@ -42,7 +43,7 @@ func Feed(c *gin.Context) {
 		} else {
 			c.JSON(http.StatusOK, FeedResponse{
 				Response:       Response{StatusCode: 0},
-				VideoList: 		videoList_,
+				VideoList: 		videoList,
 				NextTime:       time.Now().Unix(),
 			})
 		}

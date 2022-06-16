@@ -7,6 +7,7 @@ import (
 )
 
 func TestHelper(t *testing.T) {
-	res, _ := helper.GenerateToken("resr", "dsfsf")
-	fmt.Println(res)
+	res, _ := helper.AnalyseToken("FvU")
+	fmt.Println(res.UserID)
+	fmt.Println(res.UserName)
 }

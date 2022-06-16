@@ -3,13 +3,14 @@ package helper
 import (
 	"crypto/md5"
 	"fmt"
+	"strconv"
 	jwtgo "github.com/dgrijalva/jwt-go"
 	"time"
 )
 
 type UserClaims struct {
 	UserName     string `json:"userName"`
-	UserPassword string `json:"userPassword"`
+	UserID 		 string `json:"userID"`
 	jwtgo.StandardClaims
 }
 
@@ -23,12 +24,12 @@ func GetMd5(s string) string {
 
 // GenerateToken
 // 生成 token
-func GenerateToken(username string, userpassword string) (string, error) {
+func GenerateToken(username string, userID int) (string, error) {
 	expireTime := time.Now().Add(1 * time.Hour) //过期时间
 	nowTime := time.Now()                       //当前时间
 	UserClaim := &UserClaims{
 		UserName:     username,
-		UserPassword: userpassword,
+		UserID: 	  strconv.Itoa(userID),
 		StandardClaims: jwtgo.StandardClaims{
 			ExpiresAt: expireTime.Unix(), //过期时间戳
 			IssuedAt:  nowTime.Unix(),    //当前时间戳
@@ -42,4 +43,30 @@ func GenerateToken(username string, userpassword string) (string, error) {
 		return "", err
 	}
 	return tokenString, nil
+}
+
+// AnalyseToken
+// 解析 token
+func AnalyseToken(tokenString string) (*UserClaims, error) {
+	userClaim := new(UserClaims)
+	claims, err := jwtgo.ParseWithClaims(tokenString, userClaim, func(token *jwtgo.Token) (interface{}, error) {
+		return jwtkey, nil
+	})
+	if err != nil {
+		return userClaim, err
+	}
+	if !claims.Valid {
+		return userClaim, fmt.Errorf("analyse Token Error:%v", err)
+	}
+	return userClaim, nil
+}
+
+func GetUserIDByToken(tokenString string) (int, error) {
+	claims, err := AnalyseToken(tokenString)
+	if err != nil{
+		return 0, err
+	} else {
+		userID, _ := strconv.Atoi(claims.UserID)
+		return userID, nil
+	}
 }
