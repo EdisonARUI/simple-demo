@@ -1,7 +1,6 @@
 package service
 
 import (
-	"context"
 	"simple-demo/model"
 )
 
@@ -25,16 +24,6 @@ func UserLogin(userInfo model.User) (int64, int64) {
 
 }
 
-// GetUserByToken 根据用户token查user
-// func GetUserByToken(token string) (*model.User, error) {
-// 	var user model.User
-// 	if err := model.DB.Where("token = ?", token).First(&user).Error; err != nil {
-// 		return &user, err
-// 	}
-// 	return &user, nil
-// }
-
-
 //GetUserByID 需要通过用户ID查询用户信息
 func GetUserByID(userID uint) (*model.User, error) {
 	var user model.User
@@ -54,48 +43,44 @@ func GetUserByName(userName string) (*model.User, error) {
 }
 
 //FollowUser 根据传入的两个用户id  执行用户A关注用户B操作
-func FollowUser(ctx context.Context, fanID, userID int64) error {
+func FollowUser(fanID, userID int64) error {
 	fan := model.User{UserID: uint(fanID)}
 	user := model.User{UserID: uint(userID)}
-	return model.DB.WithContext(ctx).Model(&user).Association("Fans").Append(&fan)
+	return model.DB.Model(&user).Association("Fans").Append(&fan)
 }
 
 //UnFollowUser 根据传入的两个用户id  执行用户A取消关注用户B操作
-func UnFollowUser(ctx context.Context, fanID, userID int64) error {
+func UnFollowUser(fanID, userID int64) error {
 	fan := model.User{UserID: uint(fanID)}
 	user := model.User{UserID: uint(userID)}
-	return model.DB.WithContext(ctx).Model(&user).Association("Fans").Delete(&fan)
+	return model.DB.Model(&user).Association("Fans").Delete(&fan)
 }
 
-// GetFanUser 根据userID 获取该用户的粉丝ID列表
-func GetFanUser(ctx context.Context, userID int64) ([]int64, error) {
-	user := model.User{UserID: uint(userID)}
-	if err := model.DB.WithContext(ctx).Model(&user).Association("Fans").Find(&user.Fans); err != nil {
-		return nil, err
-	}
-	fanIDs := make([]int64, len(user.Fans))
-	for i, fan := range user.Fans {
-		fanIDs[i] = int64(fan.UserID)
-	}
-	return fanIDs, nil
+// GetFanList 根据userID 获取该用户的粉丝列表
+func GetFanList(userID int64) ([]model.User, error) {
+	var followerList []model.User
+
+	model.DB.Table("follow").Select("follow.fan_id,user.userid,user.username").
+		Where("follow.user_id=?", userID).
+		Joins("LEFT JOIN user ON follow.fan_id = user.userid").
+		Find(&followerList)
+	return followerList, nil
 }
 
-// GetFollowUser 根据userID 获取这个用户所关注的用户ID列表
-func GetFollowUser(ctx context.Context, fanID int64) ([]int64, error) {
-	var follows []*model.Follow
-	if err := model.DB.WithContext(ctx).Where("fan_id = ?", fanID).Find(&follows).Error; err != nil {
-		return nil, err
-	}
-	userIDs := make([]int64, len(follows))
-	for i, follow := range follows {
-		userIDs[i] = int64(follow.UserID)
-	}
-	return userIDs, nil
+// GetFollowList 根据userID 获取这个用户所关注的用户列表
+func GetFollowList(fanID int64) ([]model.User, error) {
+	var followList []model.User
+
+	model.DB.Table("follow").Select("follow.user_id,user.userid,user.username").
+		Where("follow.fan_id=?", fanID).
+		Joins("LEFT JOIN user ON follow.user_id = user.userid").
+		Find(&followList)
+	return followList, nil
 }
 
 //GetFanCount 传入用户ID 查询粉丝用户数量
 func GetFanCount(userID uint) (int64, error) {
-	user := model.User{UserID: uint(userID)}
+	user := model.User{UserID: userID}
 	return model.DB.Model(&user).Association("Fans").Count(), nil
 }
 
@@ -110,6 +95,6 @@ func GetFollowCount(fanID uint) (int64, error) {
 
 //IsFollow 根据传入两个用户ID 在follow表中查询用户A是否关注用户B
 func IsFollow(fanID, userID uint) (bool, error) {
-	user := model.User{UserID: uint(userID)}
+	user := model.User{UserID: userID}
 	return model.DB.Model(&user).Where("fan_id = ?", fanID).Association("Fans").Count() > 0, nil
 }
