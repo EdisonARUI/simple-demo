@@ -2,12 +2,11 @@ package controller
 
 import (
 	"net/http"
-	"simple-demo/service"
 	"simple-demo/helper"
 	"simple-demo/model"
+	"simple-demo/service"
 	"strconv"
 	"time"
-	"github.com/gin-gonic/gin"
 )
 
 type CommentListResponse struct {
@@ -20,7 +19,7 @@ type CommentActionResponse struct {
 	Comment Comment `json:"comment,omitempty"`
 }
 
-// CommentAction no practical effect, just check if token is valid
+// CommentAction 登录用户对视频进行评论
 func CommentAction(c *gin.Context) {
 	token := c.Query("token")
 	videoid := c.Query("video_id")
@@ -46,8 +45,8 @@ func CommentAction(c *gin.Context) {
 			cmtList, _ := GenerateComment(cmtList_)
 			c.JSON(http.StatusOK, CommentActionResponse{
 				Response: Response{
-					StatusCode: 0, 
-					StatusMsg: "评论成功",
+					StatusCode: 0,
+					StatusMsg:  "评论成功",
 				},
 				Comment: cmtList[0],
 			})
@@ -68,13 +67,13 @@ func CommentAction(c *gin.Context) {
 	}
 }
 
-// CommentList all videos have same demo comment list
+// CommentList 查看当前视频的所有评论
 func CommentList(c *gin.Context) {
 	videoID := c.Query("video_id")
 	token := c.Query("token")
 	VID, _ := strconv.ParseInt(videoID, 10, 32)
-	videoList_, _ := service.GetComment(VID)
-	videoList, _ := GenerateComment(videoList_)
+	commentList_, _ := service.GetComment(VID)
+	commentList, _ := GenerateComment(commentList_)
 
 	if token == "" {
 		c.JSON(http.StatusOK, Response{
@@ -84,16 +83,16 @@ func CommentList(c *gin.Context) {
 	} else {
 		c.JSON(http.StatusOK, CommentListResponse{
 			Response:    Response{StatusCode: 0},
-			CommentList: videoList,
+			CommentList: commentList,
 		})
 	}
 }
 
-func GenerateComment(commentList []*model.Comment) ([]Comment, error){
+func GenerateComment(commentList []*model.Comment) ([]Comment, error) {
 	res := make([]Comment, len(commentList))
 
 	for i, v := range commentList {
-		author, _ := GetAuthor((v.UserID))
+		author, _ := GetAuthor(v.UserID, 0)
 		createDate, _ := GetCreateDate(int64(v.CreatedAt))
 		res[i].Id = int64(v.CommentID)
 		res[i].User = author

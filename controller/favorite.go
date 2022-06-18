@@ -2,14 +2,13 @@ package controller
 
 import (
 	"github.com/gin-gonic/gin"
-	"log"
 	"net/http"
 	"simple-demo/helper"
 	"simple-demo/service"
 	"strconv"
 )
 
-// FavoriteAction 点赞操作
+// FavoriteAction 登录用户对视频的点赞和取消点赞操作
 func FavoriteAction(c *gin.Context) {
 	token := c.Query("token")
 	videoid := c.Query("video_id")
@@ -45,6 +44,7 @@ func FavoriteAction(c *gin.Context) {
 
 }
 
+// FavoriteList 用户的所有点赞视频
 func FavoriteList(c *gin.Context) {
 	userid := c.Query("user_id")
 	UID, _ := strconv.ParseUint(userid, 10, 32)
@@ -56,11 +56,9 @@ func FavoriteList(c *gin.Context) {
 			StatusMsg:  "You haven't logged in yet",
 		})
 	} else {
-		videoList_, err := service.GetLikeVideo(int64(UID))
-		videoList, err := GenerateVideo(videoList_)
-		log.Println(videoList)
-		log.Println(err)
-		log.Println(UID)
+		videoList_, _ := service.GetLikeVideo(int64(UID))
+		videoList, _ := GenerateVideo(videoList_, uint(UID))
+
 		c.JSON(http.StatusOK, FeedResponse{
 			Response:  Response{StatusCode: 0, StatusMsg: "Get success"},
 			VideoList: videoList,

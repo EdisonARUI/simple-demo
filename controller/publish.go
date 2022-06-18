@@ -18,16 +18,16 @@ type VideoListResponse struct {
 	VideoList []Video `json:"video_list"`
 }
 
-// Publish check token then save upload file to public directory
+// Publish 确认token后存储用户上传文件到public目录下
 func Publish(c *gin.Context) {
 	token := c.PostForm("token")
 	userID, _ := helper.GetUserIDByToken(token)
-	if userID == 0{
+	if userID == 0 {
 		c.JSON(http.StatusOK, Response{StatusCode: 1, StatusMsg: "User doesn't exist"})
 		return
 	}
 
-	user, err := service.GetUserByID(uint(userID)) 
+	user, err := service.GetUserByID(uint(userID))
 	if err != nil {
 		c.JSON(http.StatusOK, Response{StatusCode: 1, StatusMsg: "User doesn't exist"})
 		return
@@ -54,10 +54,10 @@ func Publish(c *gin.Context) {
 	}
 
 	videoInfo := model.Video{
-		UserID: user.UserID,
-		Title:  c.PostForm("title"),
-		PlayUrl: finalName,
-		CoverUrl: "bear.jpg",
+		UserID:    user.UserID,
+		Title:     c.PostForm("title"),
+		PlayUrl:   finalName,
+		CoverUrl:  "bear.jpg",
 		CreatedAt: time.Now().Unix(),
 	}
 
@@ -75,27 +75,20 @@ func Publish(c *gin.Context) {
 	})
 }
 
-// PublishList all users have same publish video list
+// PublishList 显示该用户发布过的视频
 func PublishList(c *gin.Context) {
 	userid := c.Query("user_id")
-	////token := c.Query("token")
 	UID, _ := strconv.ParseUint(userid, 10, 32)
-	
+
 	if videoList_, err := service.GetVideoListByUserID(uint(UID)); err != nil {
 		c.JSON(http.StatusOK, Response{
 			StatusCode: 1, StatusMsg: "error occur in feeding",
 		})
 	} else {
-		videoList, _ := GenerateVideo(videoList_)
+		videoList, _ := GenerateVideo(videoList_, uint(UID))
 		c.JSON(http.StatusOK, FeedResponse{
-			Response:       Response{StatusCode: 0},
-			VideoList: 		videoList,
+			Response:  Response{StatusCode: 0},
+			VideoList: videoList,
 		})
 	}
-
-	
-	//c.JSON(http.StatusOK, VideoListResponse{
-	//	Response:  Response{StatusCode: 0},
-	//	VideoList: videoList,
-	//})
 }
