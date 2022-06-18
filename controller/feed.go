@@ -21,7 +21,6 @@ func Feed(c *gin.Context) {
 	if token == "" {
 		videoList_, _ := service.GetVideoByNoLoginToken()
 		videoList, err := GenerateVideo(videoList_)
-
 		if err != nil {
 			c.JSON(http.StatusOK, Response{
 				StatusCode: 1, StatusMsg: "error occur in feeding",

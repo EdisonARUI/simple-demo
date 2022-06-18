@@ -3,8 +3,8 @@ package service
 import (
 	"context"
 	"math"
-	"simple-demo/helper"
 	"simple-demo/model"
+	"simple-demo/helper"
 )
 
 // CreateVideo 创建视频信息
