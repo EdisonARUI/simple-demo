@@ -3,8 +3,8 @@ package model
 import (
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
-	"simple-demo/define"
 	"log"
+	"simple-demo/define"
 )
 
 var DB = Init()

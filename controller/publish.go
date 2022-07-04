@@ -2,9 +2,15 @@ package controller
 
 import (
 	"fmt"
-	"github.com/gin-gonic/gin"
 	"net/http"
 	"path/filepath"
+	"simple-demo/helper"
+	"simple-demo/model"
+	"simple-demo/service"
+	"strconv"
+	"time"
+
+	"github.com/gin-gonic/gin"
 )
 
 type VideoListResponse struct {
@@ -12,11 +18,17 @@ type VideoListResponse struct {
 	VideoList []Video `json:"video_list"`
 }
 
-// Publish check token then save upload file to public directory
+// Publish 确认token后存储用户上传文件到public目录下
 func Publish(c *gin.Context) {
 	token := c.PostForm("token")
+	userID, _ := helper.GetUserIDByToken(token)
+	if userID == 0 {
+		c.JSON(http.StatusOK, Response{StatusCode: 1, StatusMsg: "User doesn't exist"})
+		return
+	}
 
-	if _, exist := usersLoginInfo[token]; !exist {
+	user, err := service.GetUserByID(uint(userID))
+	if err != nil {
 		c.JSON(http.StatusOK, Response{StatusCode: 1, StatusMsg: "User doesn't exist"})
 		return
 	}
@@ -31,10 +43,25 @@ func Publish(c *gin.Context) {
 	}
 
 	filename := filepath.Base(data.Filename)
-	user := usersLoginInfo[token]
-	finalName := fmt.Sprintf("%d_%s", user.Id, filename)
-	saveFile := filepath.Join("./public/", finalName)
+	finalName := fmt.Sprintf("%d_%s", user.UserID, filename)
+	saveFile := filepath.Join("./public/video", finalName)
 	if err := c.SaveUploadedFile(data, saveFile); err != nil {
+		c.JSON(http.StatusOK, Response{
+			StatusCode: 1,
+			StatusMsg:  err.Error(),
+		})
+		return
+	}
+
+	videoInfo := model.Video{
+		UserID:    user.UserID,
+		Title:     c.PostForm("title"),
+		PlayUrl:   finalName,
+		CoverUrl:  "bear.jpg",
+		CreatedAt: time.Now().Unix(),
+	}
+
+	if err = service.CreateVideo(c, &videoInfo); err != nil {
 		c.JSON(http.StatusOK, Response{
 			StatusCode: 1,
 			StatusMsg:  err.Error(),
@@ -48,12 +75,20 @@ func Publish(c *gin.Context) {
 	})
 }
 
-// PublishList all users have same publish video list
+// PublishList 显示该用户发布过的视频
 func PublishList(c *gin.Context) {
-	c.JSON(http.StatusOK, VideoListResponse{
-		Response: Response{
-			StatusCode: 0,
-		},
-		VideoList: DemoVideos,
-	})
+	userid := c.Query("user_id")
+	UID, _ := strconv.ParseUint(userid, 10, 32)
+
+	if videoList_, err := service.GetVideoListByUserID(uint(UID)); err != nil {
+		c.JSON(http.StatusOK, Response{
+			StatusCode: 1, StatusMsg: "error occur in feeding",
+		})
+	} else {
+		videoList, _ := GenerateVideo(videoList_, uint(UID))
+		c.JSON(http.StatusOK, FeedResponse{
+			Response:  Response{StatusCode: 0},
+			VideoList: videoList,
+		})
+	}
 }
